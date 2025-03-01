@@ -25,7 +25,7 @@ dependencies:
   - scikit-learn
   - pandas
   - matplotlib
-  - numpy
+  - numpy<2
   - scipy
   - netcdf4
   - statsmodels
@@ -36,4 +36,6 @@ dependencies:
     - seaborn
     - openpyxl
     - jupyterlab
+    - wheel
+    - https://raw.githubusercontent.com/JosePedroMatos/Tethys-meteoraster/main/dist/meteoraster-0.1-py3-none-any.whl
     
