@@ -11,7 +11,9 @@
 #conda env update -f environment.yml --prune
 #conda remove --name climatechange --all
 #conda env export > "climatechange_real.yml"
-
+#
+#conda activate climatechange
+#python -m ipykernel install --user --name=climatechange
 
 name: climatechange
 channels:
@@ -30,6 +32,7 @@ dependencies:
   - netcdf4
   - statsmodels
   - cartopy
+  - ipykernel
   - pip
   - pip:
     - BeautifulSoup4
