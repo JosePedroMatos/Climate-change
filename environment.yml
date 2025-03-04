@@ -38,7 +38,8 @@ dependencies:
     - BeautifulSoup4
     - seaborn
     - openpyxl
+	- xlwings
     - jupyterlab
     - wheel
-    - https://raw.githubusercontent.com/JosePedroMatos/Tethys-meteoraster/main/dist/meteoraster-0.1-py3-none-any.whl
+    - https://raw.githubusercontent.com/JosePedroMatos/Tethys-meteoraster/main/dist/meteoraster-0.2-py3-none-any.whl
     
