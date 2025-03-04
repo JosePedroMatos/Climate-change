@@ -49,20 +49,18 @@ projection_historical = data.iloc[:, 1]
 projection = projections.loc[:, ('tas', 'rcp85')].loc[:, zone].iloc[:, 1]
 reference = data.iloc[:, 0]
 
-#===============================================================================
-# kw_kernel = {
-#     'kw_model': {},
-#     'weight_function':lambda x: x**2,
-#     'windows': [[(np.arange(-1, 2) + i) % 12 + 1 for i in range(0, 12, 1)],],
-#     'model': QuantileMapping,
-#     }
-# 
-# group_mappers = [lambda x: x.month]
-# 
-# qm = QuantileMapper(projection_historical=projection_historical, reference=reference, kernel=Multi_Window_Mapper, kw_kernel=kw_kernel, group_mappers=group_mappers, diagnostics_path=Path(r'../temp/diagnostics'))
-# qm.map()
-# corrected = qm.apply(projection)
-#===============================================================================
+kw_kernel = {
+    'kw_model': {},
+    'weight_function':lambda x: x**2,
+    'windows': [[(np.arange(-1, 2) + i) % 12 + 1 for i in range(0, 12, 1)],],
+    'model': QuantileMapping,
+    }
+ 
+group_mappers = [lambda x: x.month]
+ 
+qm = QuantileMapper(projection_historical=projection_historical, reference=reference, kernel=Multi_Window_Mapper, kw_kernel=kw_kernel, group_mappers=group_mappers, diagnostics_path=Path(r'../temp/diagnostics'))
+qm.map()
+corrected = qm.apply(projection)
 
 #===============================================================================
 # kw_kernel = {
