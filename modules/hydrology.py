@@ -4,6 +4,7 @@ Created on 04/03/2025
 @author: Jose Pedro Matos
 '''
 
+import shutil
 import pandas as pd
 from pathlib import Path
 from matplotlib import pyplot as plt
@@ -78,8 +79,7 @@ corrected = apply_quantile_mapping(cas, modele, bv)
 
 
 
-import shutil
-import openpyxl
+
 
 hydrological_folder = Path(r'../hydrology/results') / bv / cas / modele
 hydrological_folder.mkdir(parents=True, exist_ok=True) # Créer le nouveau dossier
@@ -98,22 +98,70 @@ calibrated_hydrological_model = calibrated_hydrological_model[0]
 
 
 
-fields_to_copy = []
 
-try:
-    calibrated_model = openpyxl.load_workbook(calibrated_hydrological_model)
-    calibrated_sheet = calibrated_model['MODEL - pluie - débit']
-    
-    projection_model = openpyxl.load_workbook(active_hydrological_model)
-    projection_sheet = projection_model['MODEL - pluie - débit']
+#===============================================================================
+# import xlwings as xw
+# 
+# try:
+#     with xw.Book(calibrated_hydrological_model) as calibrated_model:
+#         with xw.Book(active_hydrological_model) as projection_model:
+#             calibrated_sheet = calibrated_model.sheets('MODEL - pluie - débit')
+#             projection_sheet = projection_model.sheets('MODEL - pluie - débit')
+# 
+#             projection_sheet.range('G2:N3').value = calibrated_sheet.range('G2:N3').value               # Copier des parametres
+#             
+#             projection_sheet.range('A6').value = corrected.index[0]                                     # Copier la date de debut
+#             projection_sheet[:corrected.shape[0], 6].offset(6,0).value = corrected.iloc[:, 0].values    # copier la precipitation
+#             projection_sheet[:corrected.shape[0], 15].offset(6,0).value = corrected.iloc[:, 1].values   # copiear la temperature
+#             
+#             
+# except Exception as ex:
+#     raise(ex)
+#===============================================================================
 
-    projection_sheet['G2':'N3'] = calibrated_sheet['G2':'N3']
 
-except Exception as ex:
-    raise(ex)
-finally:
-    calibrated_model.close()
-    projection_model.close()
+import openpyxl
+from openpyxl.utils import column_index_from_string
+
+# Load the workbooks and sheets
+calibrated_model = openpyxl.load_workbook(calibrated_hydrological_model)
+calibrated_sheet = calibrated_model['MODEL - pluie - débit']
+
+projection_model = openpyxl.load_workbook(active_hydrological_model)
+projection_sheet = projection_model['MODEL - pluie - débit']
+
+# --- Copier des paramètres ---
+# Copy range G2:N3 from calibrated_sheet to projection_sheet.
+# In openpyxl, columns and rows are 1-indexed (G is 7, N is 14).
+for r_cal, r_proj in zip(
+    calibrated_sheet.iter_rows(min_row=2, max_row=3, min_col=7, max_col=14),
+    projection_sheet.iter_rows(min_row=2, max_row=3, min_col=7, max_col=14)
+):
+    for cell_cal, cell_proj in zip(r_cal, r_proj):
+        cell_proj.value = cell_cal.value
+
+# --- Copier la date de debut ---
+# Write corrected.index[0] to cell A6.
+projection_sheet['A6'] = corrected.index[0]
+
+# --- Copier la precipitation ---
+# In your xlwings code, you write the precipitation values to a range starting with an offset of 6 rows.
+# In openpyxl, we assume that means starting at row 7 (since A6 is row 6).
+# Column index 6 in xlwings (0-based) corresponds to column 7 (G) in openpyxl.
+start_row_precip = 6  # starting row for precipitation data (G7)
+col_precip = 6        # column G
+for i, value in enumerate(corrected.iloc[:, 0].values):
+    projection_sheet.cell(row=start_row_precip + i, column=col_precip).value = value
+
+# --- Copier la temperature ---
+# Similarly, for temperature, xlwings uses column index 15 (0-based) which is column 16 (P) in openpyxl.
+start_row_temp = 6  # starting row for temperature data (P7)
+col_temp = 17       # column P
+for i, value in enumerate(corrected.iloc[:, 1].values):
+    projection_sheet.cell(row=start_row_temp + i, column=col_temp).value = value
+
+# Save the updated workbook
+projection_model.save(active_hydrological_model)
 
 
 print('Done!')
