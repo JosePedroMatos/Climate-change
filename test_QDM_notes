@@ -1,0 +1,19 @@
+Problems:
+> Definition of the quantiles.
+> Way the quantiles are calculated (upper and lower bounds) - can they be smoothed?
+> Application to seasonal models
+> Test with multiplicative models
+>| Rediscover what is the modified!! Fixes an issue of the original method when reference and projection stds do not match!
+
+
+QuantileMapper | Kernel | Model
+	kernel > MultiWindowMapper
+		model > QuantileDeltaMapping
+		
+		
+How can the map be executed before the quantiles?
+> Just because I am assuming no trend is present in the historical measurements.
+> The reference and historical projection trends should be calculated in the mapping stage.
+	> Maybe I can introduce variables that allow that.
+	> historical_trend
+	> reference_trend

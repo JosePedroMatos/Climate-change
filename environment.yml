@@ -32,6 +32,7 @@ dependencies:
   - netcdf4
   - statsmodels
   - cartopy
+  - pyqt
   - ipykernel
   - pip
   - pip:

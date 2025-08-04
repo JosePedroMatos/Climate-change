@@ -76,14 +76,31 @@ class QuantileMapping(object):
         return ax
     
 class QuantileDeltaMapping(QuantileMapping):
-    def __init__(self, trend_window=365*9, quantiles=np.r_[0, norm.cdf(np.linspace(-3,3,19)), 1], transformation='additive', multiplicative_threshold=0.01, modified=False):
+    def __init__(self, trend_window=365*9, quantiles=np.r_[0, norm.cdf(np.linspace(-3,3,19)), 1], transformation='additive', multiplicative_threshold=0.01, modified=False,
+                 reference_trend=False, projection_historical_trend=False,):
         self.quantiles = quantiles
         self.trend_window = trend_window
         self.transformation = transformation
         self.multiplicative_threshold = multiplicative_threshold
-        self.modified = modified
+        self.modified = modified  # What is the modified? My own version of the delta transformation? To account for what? When the STD of references and targets does not match there are problems!!
+        self.reference_trend = reference_trend
+        self.projection_historical_trend = projection_historical_trend
+    
     
     def set(self, to_map, reference, *args, **kwargs):
+        
+#===============================================================================
+#         if self.reference_trend:
+#             pass
+#         else:
+#             pass
+# 
+#         if self.projection_historical_trend:
+#             pass
+#         else:
+#             pass
+#===============================================================================
+        
         
         df = pd.DataFrame({'target': to_map, 'reference': reference})
         
@@ -168,11 +185,11 @@ class QuantileDeltaMapping(QuantileMapping):
         
         quantiles = self._quantiles(data)
         quantiles.plot(color='k', ax=ax, *args, **kwargs)
-        for v0 in self._FInvModel(self.quantiles):
+        for v0 in self._FInvReference(self.quantiles):
             ax.axhline(y=v0, color='r', linestyle=':', *args, **kwargs)
         ax.get_legend().remove()
-        black = mlines.Line2D([], [], color='k', label='Projection quantiles')
-        red = mlines.Line2D([], [], color='r', linestyle=':', label='Historical quantiles')
+        black = mlines.Line2D([], [], color='k', label='Correction quantiles')
+        red = mlines.Line2D([], [], color='r', linestyle=':', label='Reference quantiles')
         ax.legend(handles=[black, red])
         
         return ax
@@ -473,80 +490,3 @@ class QuantileMapper(object):
         ax.set_ylabel('Variability')
         plt.savefig(self.diagnostics_path / f'trend std.png')
         plt.close()                   
-    
-#===============================================================================
-# if __name__=='__main__':
-# 
-#     location = 'Aguieira'
-#     coords = (40.342236, -8.193848)
-#     variable = 'temperature'
-#     
-#     CORDEXProcessedPath = Path('C:/CORDEX/processed')
-#     product = 'Iberia_{variable:s}_%s_NCC-NorESM1-M_r1i1p1_GERICS-REMO2015_v1.mr'.format(variable=variable)
-#     meteo_hist = MeteoRaster.load(CORDEXProcessedPath / (product % 'historical'))
-#     meteo_Iberia01 = MeteoRaster.load('Iberia01_%s.mr' % variable)
-# 
-# 
-#     kw_kernel = {
-#         'kw_model': {'trend_window': 365*31,
-#                      'transformation': 'additive',
-#                      'modified': False,
-#                      },
-#         'weight_function':lambda x: x**2,
-#         'windows': [[(np.arange(-1, 2) + i) % 12 + 1 for i in range(0, 12, 1)],],
-#         'model': QuantileDeltaMapping,
-#         }
-#     group_mappers = [lambda x: x.month]
-#     diagnostics = pd.read_csv('diagnostics.csv', sep=';', index_col=0)
-#     
-#     qm = QuantileMapper(to_map=meteo_hist, reference=meteo_Iberia01, kernel=Multi_Window_Mapper, kw_kernel=kw_kernel, group_mappers=group_mappers, diagnostics=diagnostics)
-# 
-#     qm.map()
-#     
-#     model = 'Iberia_temperature_rcp45_NCC-NorESM1-M_r1i1p1_GERICS-REMO2015_v1'
-#     rcp45 = MeteoRaster.load(CORDEXProcessedPath / (model + '.mr'))
-#     save_path = Path('C:/CORDEX/unbiased/diagnostics') / model
-#     rcp45_qm = qm.apply(new_data_to_map=rcp45, save_path=save_path)
-#     rcp45_qm.save(Path('C:/CORDEX/unbiased') / (model + '_QDM.mr') )
-#     
-#     rcp85 = MeteoRaster.load(CORDEXProcessedPath / 'Iberia_temperature_rcp85_NCC-NorESM1-M_r1i1p1_GERICS-REMO2015_v1.mr')
-#     rcp85_qm = qm.apply(new_data_to_map=rcp85)
-# 
-# 
-# 
-# 
-#     
-#     ref = meteo_Iberia01.getDataFromLatLon(*coords).stack('Production dates')
-#     ref.index = ref.index.droplevel(0)
-#     ref.columns = ['Reference']
-#      
-#     hist = meteo_hist.getDataFromLatLon(*coords).stack('Production dates')
-#     hist.index = pd.DatetimeIndex(hist.index.droplevel(0).date)
-#     hist.columns = ['Historical']
-#      
-#     raw45 = rcp45.getDataFromLatLon(*coords).stack('Production dates')
-#     raw45.index = pd.DatetimeIndex(raw45.index.droplevel(0).date)
-#     raw45.columns = ['RCP45_raw']
-#      
-#     map45 = rcp45_qm.getDataFromLatLon(*coords).stack('Production dates')
-#     map45.index = pd.DatetimeIndex(map45.index.droplevel(0).date)
-#     map45.columns = ['RCP45']
-#      
-#     raw85 = rcp85.getDataFromLatLon(*coords).stack('Production dates')
-#     raw85.index = pd.DatetimeIndex(raw85.index.droplevel(0).date)
-#     raw85.columns = ['RCP85_raw']
-#      
-#     map85 = rcp85_qm.getDataFromLatLon(*coords).stack('Production dates')
-#     map85.index = pd.DatetimeIndex(map85.index.droplevel(0).date)
-#     map85.columns = ['RCP85']
-#      
-#     data = ref.join(hist, how='outer').join(pd.concat((raw45, map45, raw85, map85), axis=1), how='outer')
-#     yearly = data.groupby(data.index.year, axis=0).mean()
-#     rolling = yearly.rolling(window=11, center=True, axis=0, min_periods=9).mean()
-#     ax = yearly.loc[:, ['Reference', 'Historical', 'RCP45', 'RCP85']].plot(style='.')
-#     rolling.loc[:, ['Reference', 'Historical', 'RCP45', 'RCP85']].plot(ax=ax)
-#     rolling.loc[:, ['RCP45_raw', 'RCP85_raw']].plot(ax=ax, style=':')
-#     
-#     pass
-#     pass
-#===============================================================================

@@ -33,9 +33,6 @@ class Multi_Window_Mapper(object):
         self.model_weights = [[self._set_weights(v) for v in i] for i in self.model_characteristcs]
         
         self.groupby = groupby
-    
-    def run(self, *args, **kwargs):
-        return self.fit(*args, **kwargs)
         
     def fit(self, reference, to_map=None):
         if isinstance(to_map, type(None)):
